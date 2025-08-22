@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Literal
 from datetime import datetime
 import json
 from .suggestion_service import suggest_entities
@@ -46,7 +46,7 @@ class Relation(BaseModel):
     source_entity_id: str
     target_entity_id: str
     relation_type: str
-    direction: str = "forward"
+    direction: Literal["forward", "reverse"] = "forward"
     annotator: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
@@ -59,6 +59,9 @@ class Document(BaseModel):
 
 # In-memory store (replace with persistent storage later)
 DOCUMENTS: dict[str, Document] = {}
+
+# Default annotator (can be overridden via environment variable APP_ANNOTATOR)
+DEFAULT_ANNOTATOR = os.getenv("APP_ANNOTATOR", "anon")
 
 # --- Persistence (Step 1: directory + save on create) ---
 ANNOTATIONS_DIR = Path("data") / "annotations"
@@ -117,12 +120,17 @@ def get_document(doc_id: str):
 
 @app.post("/documents/{doc_id}/entities", response_model=Entity)
 def add_entity(doc_id: str, entity: Entity):
+    # Auto-populate annotator if not provided
+    if entity.annotator is None:
+        entity.annotator = DEFAULT_ANNOTATOR
     DOCUMENTS[doc_id].entities.append(entity)
     save_document(DOCUMENTS[doc_id])
     return entity
 
 @app.post("/documents/{doc_id}/relations", response_model=Relation)
 def add_relation(doc_id: str, relation: Relation):
+    if relation.annotator is None:
+        relation.annotator = DEFAULT_ANNOTATOR
     DOCUMENTS[doc_id].relations.append(relation)
     save_document(DOCUMENTS[doc_id])
     return relation
