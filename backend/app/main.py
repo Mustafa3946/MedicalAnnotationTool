@@ -6,6 +6,8 @@ from typing import List, Optional
 from datetime import datetime
 import json
 import os
+import glob
+from pathlib import Path
 import uuid
 
 app = FastAPI(title="Medical Annotation API", version="0.1.0")
@@ -118,3 +120,38 @@ def health():
 @app.get("/vocab")
 def get_vocab():
     return load_vocab()
+
+# --- Bootstrap abstracts ---
+def _extract_core_text(raw: str) -> str:
+    # Try to extract quoted main text if present
+    if raw.count("\"") >= 2:
+        first = raw.find("\"")
+        last = raw.rfind("\"")
+        if last - first > 20:  # ensure non-trivial length
+            return raw[first+1:last].strip()
+    # Fallback: remove lines starting with 'Entities'/'Relations' examples
+    lines = [ln for ln in raw.splitlines() if not ln.startswith("Entities") and not ln.startswith("Relations") and not ln.startswith("Use Case")]
+    return "\n".join(lines).strip()
+
+@app.post("/bootstrap", response_model=List[Document])
+def bootstrap():
+    """Load raw abstracts from data/raw/*.txt into memory (id = filename stem)."""
+    base_candidates = [
+        Path("data") / "raw",
+        Path(__file__).resolve().parent / ".." / ".." / "data" / "raw",
+    ]
+    loaded_docs: List[Document] = []
+    for folder in base_candidates:
+        if folder.is_dir():
+            for path in folder.glob("*.txt"):
+                doc_id = path.stem
+                if doc_id in DOCUMENTS:
+                    loaded_docs.append(DOCUMENTS[doc_id])
+                    continue
+                raw = path.read_text(encoding="utf-8")
+                core = _extract_core_text(raw)
+                doc = Document(id=doc_id, text=core)
+                DOCUMENTS[doc.id] = doc
+                loaded_docs.append(doc)
+            break  # stop after first existing folder processed
+    return loaded_docs
