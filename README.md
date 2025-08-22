@@ -13,8 +13,6 @@ Health check: https://ifk8vjymp2.ap-southeast-2.awsapprunner.com/health
 
 Note:
 - Cold start right after a new deployment may take ~30–60s.
-- Demo uses 1 vCPU / 2GB. Expect modest concurrency only.
-- Data persistence is container-local (stateless across redeploys). Export before redeploy if you need to keep work.
 
 ## Project Folder Structure
 
