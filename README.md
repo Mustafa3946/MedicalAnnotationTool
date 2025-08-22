@@ -183,5 +183,8 @@ The live demo runs on AWS App Runner (container direct from ECR). steps:
 5. Enable automatic deployments from ECR.
 6. (Optional) Health check path /health.
 
+Teardown: Delete App Runner service → (optional) delete ECR images/repository.
+
+Cost / limits: Small size (1 vCPU / 2GB) keeps costs low; scale-out occurs automatically on load. No persistent volume attached—export data before redeploy.
 
 
