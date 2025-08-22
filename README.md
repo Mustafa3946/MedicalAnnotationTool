@@ -72,8 +72,8 @@ Endpoints (subject to change as frontend is added):
 - GET /documents/{id}/export
 - POST /import (upload JSON export)
 - GET /health
- - GET /vocab (controlled entity/relation types)
- - POST /bootstrap (ingest raw abstracts into documents)
+- GET /vocab (controlled entity/relation types)
+- POST /bootstrap (ingest raw abstracts into documents)
 
 Example workflow (single document):
 1. POST /bootstrap

@@ -7,8 +7,10 @@ WORKDIR /app
 COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy app code
+# Copy app code and static frontend + data
 COPY backend/app ./app
+COPY frontend ./frontend
+COPY data ./data
 
 EXPOSE 8000
 

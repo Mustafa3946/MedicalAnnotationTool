@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Medical Annotation Tool (Minimal)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0 1rem; }
+    header { padding: .5rem 0; }
+    #docText { white-space: pre-wrap; border:1px solid #ccc; padding:1rem; min-height:160px; cursor:text; }
+    #entities, #relations { border:1px solid #ddd; padding:.5rem; min-height:80px; }
+    .entity-item { font-size:.85rem; margin:2px 0; }
+    .entity-label { font-weight:bold; }
+    .controls { display:flex; gap:1rem; flex-wrap:wrap; margin:.5rem 0; }
+    select, button, input { padding:.25rem; }
+    .badge { display:inline-block; padding:2px 6px; border-radius:4px; background:#eef; margin-left:4px; }
+    .entity-highlight { background: #ffff88; }
+    #status { font-size:.8rem; color:#555; }
+    .small { font-size:.75rem; color:#666; }
+  </style>
+</head>
+<body>
+<header>
+  <h3>Medical Annotation Tool</h3>
+  <div id="status">Idle</div>
+</header>
+<section class="controls">
+  <button id="btnBootstrap">Bootstrap Documents</button>
+  <select id="docSelect"><option value="">-- select document --</option></select>
+  <select id="entityType"></select>
+  <button id="btnAddEntity" disabled>Add Entity (current selection)</button>
+  <select id="relationType"></select>
+  <button id="btnAddRelation" disabled>Create Relation (choose 2 entities)</button>
+  <button id="btnExport" disabled>Export JSON</button>
+</section>
+<section>
+  <h4>Document Text</h4>
+  <div id="docText"></div>
+</section>
+<section>
+  <h4>Entities</h4>
+  <div id="entities"></div>
+</section>
+<section>
+  <h4>Relations</h4>
+  <div id="relations"></div>
+</section>
+<section>
+  <h4>Export</h4>
+  <pre id="exportOut" style="border:1px solid #ccc; padding:.5rem; max-height:200px; overflow:auto;"></pre>
+</section>
+<script>
+const statusEl = document.getElementById('status');
+const docSelect = document.getElementById('docSelect');
+const docTextEl = document.getElementById('docText');
+const entitiesEl = document.getElementById('entities');
+const relationsEl = document.getElementById('relations');
+const entityTypeSel = document.getElementById('entityType');
+const relationTypeSel = document.getElementById('relationType');
+const btnAddEntity = document.getElementById('btnAddEntity');
+const btnAddRelation = document.getElementById('btnAddRelation');
+const btnBootstrap = document.getElementById('btnBootstrap');
+const btnExport = document.getElementById('btnExport');
+const exportOut = document.getElementById('exportOut');
+let currentDoc = null;
+let vocab = null;
+
+function setStatus(msg){ statusEl.textContent = msg; }
+async function fetchJSON(url, opts){ const r = await fetch(url, opts); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+
+async function loadVocab(){ vocab = await fetchJSON('/vocab'); entityTypeSel.innerHTML = vocab.entity_types.map(t=>`<option>${t}</option>`).join(''); relationTypeSel.innerHTML = vocab.relation_types.map(t=>`<option>${t}</option>`).join(''); }
+
+async function bootstrap(){ setStatus('Bootstrapping...'); await fetchJSON('/bootstrap', {method:'POST'}); await refreshDocs(); setStatus('Bootstrapped'); }
+
+async function refreshDocs(){ const docs = await fetchJSON('/documents'); docSelect.innerHTML = '<option value="">-- select document --</option>' + docs.map(d=>`<option value="${d.id}">${d.id}</option>`).join(''); if(currentDoc && docs.find(d=>d.id===currentDoc.id)){ docSelect.value = currentDoc.id; } }
+
+async function loadDoc(id){ if(!id){ currentDoc=null; return; } currentDoc = await fetchJSON(`/documents/${id}`); renderDoc(); }
+
+function renderDoc(){ if(!currentDoc){ docTextEl.textContent=''; entitiesEl.textContent=''; relationsEl.textContent=''; return; }
+  docTextEl.textContent = currentDoc.text;
+  // Entities list
+  entitiesEl.innerHTML = currentDoc.entities.map(e=>`<div class='entity-item'><label><input type='checkbox' class='entityCheck' value='${e.id}' /> <span class='entity-label'>${e.type}</span> [${e.start}-${e.end}] "${e.text}" <span class='small'>${e.id.substring(0,6)}</span></label></div>`).join('');
+  // Relations list
+  relationsEl.innerHTML = currentDoc.relations.map(r=>`<div class='entity-item'>${r.relation_type}: ${r.source_entity_id.substring(0,6)} -> ${r.target_entity_id.substring(0,6)}</div>`).join('');
+  btnExport.disabled = false;
+  highlightEntities();
+}
+
+function highlightEntities(){ const text = currentDoc.text; if(!text) return; // naive span injection
+  let segments = []; let last=0; const sorted = [...currentDoc.entities].sort((a,b)=>a.start-b.start);
+  for(const e of sorted){ if(e.start > last) segments.push(escapeHtml(text.slice(last, e.start))); segments.push(`<span class='entity-highlight' title='${e.type}'>${escapeHtml(text.slice(e.start, e.end))}</span>`); last = e.end; }
+  if(last < text.length) segments.push(escapeHtml(text.slice(last)));
+  docTextEl.innerHTML = segments.join('');
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+function getSelectionOffsets(){ const sel = window.getSelection(); if(!sel || sel.rangeCount===0) return null; const range = sel.getRangeAt(0); if(!docTextEl.contains(range.startContainer) || !docTextEl.contains(range.endContainer)) return null; // flatten text
+  const walker = document.createTreeWalker(docTextEl, NodeFilter.SHOW_TEXT, null); let pos=0; let start=-1; let end=-1; while(walker.nextNode()){ const node = walker.currentNode; if(node===range.startContainer) start = pos + range.startOffset; if(node===range.endContainer) end = pos + range.endOffset; pos += node.nodeValue.length; }
+  if(start>-1 && end>-1){ if(end<start) [start,end]=[end,start]; if(start===end) return null; return {start,end}; }
+  return null; }
+
+docTextEl.addEventListener('mouseup', ()=>{ const off = getSelectionOffsets(); btnAddEntity.disabled = !off; });
+
+btnAddEntity.addEventListener('click', async ()=>{
+  const off = getSelectionOffsets(); if(!off){ alert('Select text first'); return; }
+  const spanText = currentDoc.text.slice(off.start, off.end);
+  const payload = { start: off.start, end: off.end, text: spanText, type: entityTypeSel.value };
+  await fetchJSON(`/documents/${currentDoc.id}/entities`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  currentDoc = await fetchJSON(`/documents/${currentDoc.id}`); renderDoc(); setStatus('Entity added');
+});
+
+btnAddRelation.addEventListener('click', async ()=>{
+  const checks = Array.from(document.querySelectorAll('.entityCheck:checked')).map(c=>c.value); if(checks.length!==2){ alert('Select exactly 2 entities'); return; }
+  const payload = { source_entity_id: checks[0], target_entity_id: checks[1], relation_type: relationTypeSel.value };
+  await fetchJSON(`/documents/${currentDoc.id}/relations`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  currentDoc = await fetchJSON(`/documents/${currentDoc.id}`); renderDoc(); setStatus('Relation added');
+});
+
+entitiesEl.addEventListener('change', ()=>{ const selected = document.querySelectorAll('.entityCheck:checked').length; btnAddRelation.disabled = (selected!==2); });
+
+btnExport.addEventListener('click', async ()=>{ const data = await fetchJSON(`/documents/${currentDoc.id}/export`); exportOut.textContent = JSON.stringify(data, null, 2); setStatus('Exported'); });
+
+btnBootstrap.addEventListener('click', async ()=>{ await bootstrap(); });
+
+docSelect.addEventListener('change', async e=>{ await loadDoc(e.target.value); });
+
+(async function init(){ setStatus('Loading vocab...'); await loadVocab(); setStatus('Ready. Bootstrap or select existing document.'); })();
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse, FileResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
@@ -20,8 +21,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount frontend static (built or simple static files)
-app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+# Mount frontend static under /ui to avoid clobbering API routes
+app.mount("/ui", StaticFiles(directory="frontend", html=True), name="frontend")
+
+@app.get("/")
+def root_index():
+    # Redirect to UI index
+    return RedirectResponse(url="/ui/")
 
 # --- Data Models ---
 class Entity(BaseModel):
@@ -134,6 +140,7 @@ def _extract_core_text(raw: str) -> str:
     return "\n".join(lines).strip()
 
 @app.post("/bootstrap", response_model=List[Document])
+@app.get("/bootstrap", response_model=List[Document])
 def bootstrap():
     """Load raw abstracts from data/raw/*.txt into memory (id = filename stem)."""
     base_candidates = [
