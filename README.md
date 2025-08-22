@@ -2,34 +2,42 @@
 
 This project is a web-based tool for medical experts to annotate medical entities and relationships in clinical narratives. The annotations can be exported for use in healthcare NLP model training and evaluation.
 
+For deeper technical details (architecture, data model, extensibility), see [`docs/design.md`](docs/design.md).
+
 ## Project Folder Structure
 
 ```
 MedicalAnnotationTool/
 │
-├── backend/                  # FastAPI backend (app code, dependencies)
-│   └── app/                  # main.py and related modules
+├── backend/                      # FastAPI backend
+│   └── app/
+│       ├── main.py               # API + models + persistence
+│       └── suggestion_service.py # Heuristic entity suggestions
 │   └── requirements.txt
 │
-├── frontend/                 # (Planned) Web UI (React or simple JS)
-│   └── ...
+├── frontend/                     # Minimal static UI
+│   └── index.html
 │
-├── data/                     # Sample texts and exported annotations
-│   └── sample_texts.txt
-│   └── sample_annotations.json
+├── data/
+│   ├── raw/                      # Source text abstracts (.txt)
+│   ├── annotations/              # Saved JSON annotations (generated)
+│   └── vocab.json                # Controlled vocab
 │
-├── docs/                     # Design document, extended README/report
-│   └── design.md
-│   └── report.md
+├── docs/
+│   └── design.md                 # Architecture & data model
 │
-├── scripts/                  # Utility scripts (optional)
-│   └── ...
+├── scripts/                      # (empty placeholder)
 │
-├── tests/                    # Automated tests
-│   └── ...
+├── secrets/                      # Provided challenge instructions (not for prod)
+│   └── *.txt
 │
-├── docker-compose.yml        # Orchestrates local services
-├── Dockerfile                # Backend container image
+├── tests/                        # Pytest suite
+│   ├── test_api.py
+│   ├── test_persistence.py
+│   └── test_suggestions.py
+│
+├── docker-compose.yml            # Local orchestration
+├── Dockerfile                    # Container image build
 ├── .gitignore
 └── README.md
 ```
@@ -129,4 +137,5 @@ Phase 1 (done): Backend scaffold + Docker.
 Phase 2: Minimal frontend (document view, entity selection, relation linking).
 Phase 3: Export/import polish + sample dataset.
 Phase 4 (later): Reintroduce Terraform + Azure hosting and optional LLM suggestions.
+\- See `docs/design.md` for future improvement list and extensibility notes.
 
