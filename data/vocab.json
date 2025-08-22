@@ -1,0 +1,4 @@
+{
+  "entity_types": ["Disease","Medication","Symptom","Procedure"],
+  "relation_types": ["treats","causes","indicates"]
+}

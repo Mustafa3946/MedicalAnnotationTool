@@ -1,0 +1,12 @@
+Abstract 1: Hypertension Management
+Text (PMID: 40811497, adapted):
+"Hypertension remains a leading cause of cardiovascular disease and stroke. Amlodipine, a calcium channel blocker, is effective in reducing blood pressure in patients with mild to moderate hypertension. Common side effects include peripheral edema and headache. Lifestyle modifications, such as reduced salt intake, enhance treatment outcomes. In severe cases, combination therapy with lisinopril may be required to achieve blood pressure control."
+Entities (Example):
+
+Disease: Hypertension (0–12), cardiovascular disease (33–53), stroke (58–63)
+Medication: Amlodipine (65–75), lisinopril (212–221)
+Symptom: peripheral edema (121–136), headache (141–148)
+Procedure: Lifestyle modifications (153–175)
+Relations: Amlodipine–treats–Hypertension, Lisinopril–treats–Hypertension, Hypertension–causes–cardiovascular disease
+
+Use Case: Test entity tagging (highlight “Hypertension,” select “Disease”) and relations (link “Amlodipine” to “Hypertension” as “treats”).
