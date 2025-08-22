@@ -1,4 +1,3 @@
-version: '3.9'
 services:
   backend:
     build: .
@@ -7,5 +6,6 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/app:/app/app:ro
+      - ./data:/app/data
     environment:
       - APP_ENV=dev
