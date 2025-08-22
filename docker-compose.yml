@@ -1,0 +1,11 @@
+version: '3.9'
+services:
+  backend:
+    build: .
+    container_name: annotation-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app:ro
+    environment:
+      - APP_ENV=dev
