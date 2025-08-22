@@ -14,6 +14,8 @@ Health check: https://ifk8vjymp2.ap-southeast-2.awsapprunner.com/health
 Note:
 - Cold start right after a new deployment may take ~30–60s.
 
+Evaluation format: A live, interactive environment is intentionally provided in place of static screenshots or a prerecorded video so reviewers can exercise the end‑to‑end workflow (bootstrap → annotate entities → create relations → suggestions → export) directly. A capture can be produced on request if offline evidence becomes necessary.
+
 ## Project Folder Structure
 
 ```
