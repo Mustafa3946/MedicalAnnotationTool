@@ -132,6 +132,30 @@ Open http://localhost:8000/ui/ after the container is running. Then:
 
 Status messages appear at the top; all saved JSON files land in `data/annotations/`.
 
+## Sample Annotation JSON
+
+Excerpt of a persisted document file (`data/annotations/abstract1.json`):
+
+```json
+{
+	"id": "abstract1",
+	"text": "Hypertension remains a leading cause of cardiovascular disease and stroke. Amlodipine, ...",
+	"status": "in_progress",
+	"entities": [
+		{"id": "4195...46b9", "start":0, "end":12, "text":"Hypertension", "type":"Disease", "annotator": null, "timestamp": "2025-08-22T10:09:36.680464"},
+		{"id": "eeca...2a98", "start":75, "end":85, "text":"Amlodipine", "type":"Medication", "annotator": null, "timestamp": "2025-08-22T10:09:38.476035"}
+		// ... more entities ...
+	],
+	"relations": [
+		{"id": "af84...261f", "source_entity_id": "4195...46b9", "target_entity_id": "eeca...2a98", "relation_type": "causes", "direction": "forward", "annotator": null, "timestamp": "2025-08-22T10:13:51.157282"},
+		{"id": "73c5...be7f1", "source_entity_id": "eeca...2a98", "target_entity_id": "56b4...9e57", "relation_type": "treats", "direction": "forward", "annotator": null, "timestamp": "2025-08-22T10:18:43.106154"}
+		// ... more relations ...
+	]
+}
+```
+
+(IDs truncated for readability.)
+
 ## Roadmap (Time-Constrained)
 Phase 1 (done): Backend scaffold + Docker.
 Phase 2: Minimal frontend (document view, entity selection, relation linking).
