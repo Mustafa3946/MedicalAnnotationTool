@@ -1,20 +1,25 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 import json
+import os
 import uuid
 
 app = FastAPI(title="Medical Annotation API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Consider restricting in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount frontend static (built or simple static files)
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
 
 # --- Data Models ---
 class Entity(BaseModel):
@@ -45,6 +50,30 @@ class Document(BaseModel):
 
 # In-memory store (replace with persistent storage later)
 DOCUMENTS: dict[str, Document] = {}
+
+# Load vocab (lazy or at startup)
+_VOCAB_CACHE: dict | None = None
+
+def load_vocab() -> dict:
+    global _VOCAB_CACHE
+    if _VOCAB_CACHE is not None:
+        return _VOCAB_CACHE
+    # Search typical locations: running inside repo root or inside Docker /app
+    candidates = [
+        os.path.join("data", "vocab.json"),               # repo root while running locally
+        os.path.join(os.path.dirname(__file__), "..", "..", "data", "vocab.json"),  # relative traversal
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            with open(path, "r", encoding="utf-8") as f:
+                _VOCAB_CACHE = json.load(f)
+                return _VOCAB_CACHE
+    # Fallback minimal default if file not found
+    _VOCAB_CACHE = {
+        "entity_types": ["Disease", "Medication", "Symptom", "Procedure"],
+        "relation_types": ["treats", "causes", "indicates"],
+    }
+    return _VOCAB_CACHE
 
 # --- API Endpoints ---
 @app.post("/documents", response_model=Document)
@@ -85,3 +114,7 @@ def import_annotations(file: UploadFile = File(...)):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/vocab")
+def get_vocab():
+    return load_vocab()

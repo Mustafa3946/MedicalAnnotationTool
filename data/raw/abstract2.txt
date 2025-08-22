@@ -1,0 +1,11 @@
+Abstract 2: Asthma and Corticosteroids
+Text (inspired by PubMed clinical trial data):
+"Asthma is a chronic inflammatory airway disease causing wheezing, shortness of breath, and cough. Inhaled corticosteroids like budesonide reduce airway inflammation and improve lung function. Montelukast is used as an adjunct therapy in patients with persistent symptoms. Severe exacerbations may necessitate systemic corticosteroids, such as prednisone, to prevent hospitalization."
+Entities (Example):
+
+Disease: Asthma (0–6), airway inflammation (38–55)
+Medication: Inhaled corticosteroids (60–80), budesonide (86–95), montelukast (125–135), prednisone (187–196)
+Symptom: wheezing (33–40), shortness of breath (42–59), cough (65–70)
+Relations: Budesonide–treats–Asthma, Montelukast–treats–Asthma, Asthma–causes–wheezing
+
+Use Case: Test overlapping entities (e.g., “inhaled corticosteroids” vs. “budesonide”) and multiple relations.

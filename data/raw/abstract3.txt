@@ -1,0 +1,11 @@
+Abstract 3: Type 2 Diabetes Complications
+Text (inspired by):
+"Type 2 diabetes mellitus increases the risk of diabetic neuropathy and cardiovascular complications. Metformin is the first-line treatment to control hyperglycemia. Symptoms such as numbness and tingling are common in diabetic neuropathy. Insulin therapy is introduced when glycemic control is inadequate."
+Entities (Example):
+
+Disease: Type 2 diabetes mellitus (0–23), diabetic neuropathy (47–64), cardiovascular complications (69–94), hyperglycemia (141–153)
+Medication: Metformin (99–108), insulin (192–199)
+Symptom: numbness (128–135), tingling (140–147)
+Relations: Metformin–treats–Type 2 diabetes mellitus, Type 2 diabetes mellitus–causes–diabetic neuropathy
+
+Use Case: Test complex relations (e.g., disease-to-disease causation) and entity spans.
