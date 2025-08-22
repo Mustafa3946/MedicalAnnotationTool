@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 import json
+from .suggestion_service import suggest_entities
 import os
 import glob
 from pathlib import Path
@@ -127,6 +128,16 @@ def health():
 def get_vocab():
     return load_vocab()
 
+@app.get("/suggest/entities")
+def suggest_entities_endpoint(doc_id: str):
+    if doc_id not in DOCUMENTS:
+        return {"error": "document not found"}
+    doc = DOCUMENTS[doc_id]
+    existing = [(e.start, e.end) for e in doc.entities]
+    suggestions = suggest_entities(doc.text, existing)
+    # Log suggestions (simple stdout log)
+    print(f"[suggest] doc={doc_id} count={len(suggestions)}")
+    return {"document_id": doc_id, "suggestions": suggestions}
 # --- Bootstrap abstracts ---
 def _extract_core_text(raw: str) -> str:
     # Try to extract quoted main text if present

@@ -31,6 +31,7 @@
   <select id="relationType"></select>
   <button id="btnAddRelation" disabled>Create Relation (choose 2 entities)</button>
   <button id="btnExport" disabled>Export JSON</button>
+  <button id="btnSuggest" disabled>Suggest Entities</button>
 </section>
 <section>
   <h4>Document Text</h4>
@@ -39,6 +40,10 @@
 <section>
   <h4>Entities</h4>
   <div id="entities"></div>
+  <details style="margin-top:.5rem;">
+    <summary>Suggestions</summary>
+    <div id="suggestions" style="border:1px dashed #999; padding:.5rem; min-height:40px; font-size:.85rem;"></div>
+  </details>
 </section>
 <section>
   <h4>Relations</h4>
@@ -60,6 +65,8 @@ const btnAddEntity = document.getElementById('btnAddEntity');
 const btnAddRelation = document.getElementById('btnAddRelation');
 const btnBootstrap = document.getElementById('btnBootstrap');
 const btnExport = document.getElementById('btnExport');
+const btnSuggest = document.getElementById('btnSuggest');
+const suggestionsEl = document.getElementById('suggestions');
 const exportOut = document.getElementById('exportOut');
 let currentDoc = null;
 let vocab = null;
@@ -82,6 +89,7 @@ function renderDoc(){ if(!currentDoc){ docTextEl.textContent=''; entitiesEl.text
   // Relations list
   relationsEl.innerHTML = currentDoc.relations.map(r=>`<div class='entity-item'>${r.relation_type}: ${r.source_entity_id.substring(0,6)} -> ${r.target_entity_id.substring(0,6)}</div>`).join('');
   btnExport.disabled = false;
+  btnSuggest.disabled = false;
   highlightEntities();
 }
 
@@ -121,6 +129,37 @@ entitiesEl.addEventListener('change', ()=>{ const selected = document.querySelec
 btnExport.addEventListener('click', async ()=>{ const data = await fetchJSON(`/documents/${currentDoc.id}/export`); exportOut.textContent = JSON.stringify(data, null, 2); setStatus('Exported'); });
 
 btnBootstrap.addEventListener('click', async ()=>{ await bootstrap(); });
+
+btnSuggest.addEventListener('click', async ()=>{
+  if(!currentDoc){ return; }
+  setStatus('Fetching suggestions...');
+  try {
+    const data = await fetchJSON(`/suggest/entities?doc_id=${currentDoc.id}`);
+    const suggs = data.suggestions || [];
+    if(!suggs.length){ suggestionsEl.innerHTML = '<em>No suggestions</em>'; }
+    else {
+      suggestionsEl.innerHTML = suggs.map(s=>`<div data-start='${s.start}' data-end='${s.end}' data-text='${s.text}' data-type='${s.type}'>${s.type}: "${s.text}" [${s.start}-${s.end}] <button class='btnAccept' data-start='${s.start}' data-end='${s.end}' data-text='${s.text}' data-type='${s.type}'>Add</button></div>`).join('');
+    }
+  } catch (e){
+    suggestionsEl.textContent = 'Error fetching suggestions';
+  }
+  setStatus('Suggestions updated');
+});
+
+suggestionsEl?.addEventListener('click', async (e)=>{
+  const t = e.target;
+  if(t.classList?.contains('btnAccept')){
+    const start = parseInt(t.getAttribute('data-start'));
+    const end = parseInt(t.getAttribute('data-end'));
+    const text = t.getAttribute('data-text');
+    const typ = t.getAttribute('data-type');
+    const payload = {start, end, text, type: typ};
+    await fetchJSON(`/documents/${currentDoc.id}/entities`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    currentDoc = await fetchJSON(`/documents/${currentDoc.id}`);
+    renderDoc();
+    setStatus('Suggestion accepted');
+  }
+});
 
 docSelect.addEventListener('change', async e=>{ await loadDoc(e.target.value); });
 
