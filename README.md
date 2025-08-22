@@ -38,16 +38,6 @@ MedicalAnnotationTool/
 ├── docs/
 │   └── design.md                 # Architecture & data model
 │
-├── scripts/                      # (empty placeholder)
-│
-├── secrets/                      # Provided challenge instructions (not for prod)
-│   └── *.txt
-│
-├── tests/                        # Pytest suite
-│   ├── test_api.py
-│   ├── test_persistence.py
-│   └── test_suggestions.py
-│
 ├── docker-compose.yml            # Local orchestration
 ├── Dockerfile                    # Container image build
 ├── .gitignore
