@@ -57,6 +57,9 @@ class Document(BaseModel):
     entities: List[Entity] = []
     relations: List[Relation] = []
 
+class StatusUpdate(BaseModel):
+    status: str
+
 # In-memory store (replace with persistent storage later)
 DOCUMENTS: dict[str, Document] = {}
 
@@ -134,6 +137,33 @@ def add_relation(doc_id: str, relation: Relation):
     DOCUMENTS[doc_id].relations.append(relation)
     save_document(DOCUMENTS[doc_id])
     return relation
+
+@app.delete("/documents/{doc_id}/entities/{entity_id}")
+def delete_entity(doc_id: str, entity_id: str):
+    doc = DOCUMENTS[doc_id]
+    before = len(doc.entities)
+    doc.entities = [e for e in doc.entities if e.id != entity_id]
+    removed = before - len(doc.entities)
+    if removed:
+        save_document(doc)
+    return {"deleted": removed}
+
+@app.delete("/documents/{doc_id}/relations/{relation_id}")
+def delete_relation(doc_id: str, relation_id: str):
+    doc = DOCUMENTS[doc_id]
+    before = len(doc.relations)
+    doc.relations = [r for r in doc.relations if r.id != relation_id]
+    removed = before - len(doc.relations)
+    if removed:
+        save_document(doc)
+    return {"deleted": removed}
+
+@app.patch("/documents/{doc_id}/status", response_model=Document)
+def update_document_status(doc_id: str, payload: StatusUpdate):
+    doc = DOCUMENTS[doc_id]
+    doc.status = payload.status
+    save_document(doc)
+    return doc
 
 @app.get("/documents/{doc_id}/export")
 def export_document(doc_id: str):

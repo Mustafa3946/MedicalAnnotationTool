@@ -86,10 +86,10 @@ async function loadDoc(id){ if(!id){ currentDoc=null; return; } currentDoc = awa
 
 function renderDoc(){ if(!currentDoc){ docTextEl.textContent=''; entitiesEl.textContent=''; relationsEl.textContent=''; return; }
   docTextEl.textContent = currentDoc.text;
-  // Entities list
-  entitiesEl.innerHTML = currentDoc.entities.map(e=>`<div class='entity-item'><label><input type='checkbox' class='entityCheck' value='${e.id}' /> <span class='entity-label'>${e.type}</span> [${e.start}-${e.end}] "${e.text}" <span class='small'>${e.id.substring(0,6)}</span></label></div>`).join('');
-  // Relations list
-  relationsEl.innerHTML = currentDoc.relations.map(r=>`<div class='entity-item'>${r.relation_type}: ${r.source_entity_id.substring(0,6)} -> ${r.target_entity_id.substring(0,6)}</div>`).join('');
+  // Entities list with delete button
+  entitiesEl.innerHTML = currentDoc.entities.map(e=>`<div class='entity-item'><label><input type='checkbox' class='entityCheck' value='${e.id}' /> <span class='entity-label'>${e.type}</span> [${e.start}-${e.end}] "${e.text}" <span class='small'>${e.id.substring(0,6)}</span></label> <button class='delEntity' data-id='${e.id}' title='Delete entity'>✕</button></div>`).join('');
+  // Relations list with delete button
+  relationsEl.innerHTML = currentDoc.relations.map(r=>`<div class='entity-item'>${r.relation_type}: ${r.source_entity_id.substring(0,6)} -> ${r.target_entity_id.substring(0,6)} <button class='delRelation' data-id='${r.id}' title='Delete relation'>✕</button></div>`).join('');
   btnExport.disabled = false;
   btnSuggest.disabled = false;
   highlightEntities();
@@ -170,6 +170,32 @@ suggestionsEl?.addEventListener('click', async (e)=>{
     currentDoc = await fetchJSON(`/documents/${currentDoc.id}`);
     renderDoc();
     setStatus('Suggestion accepted');
+  }
+});
+
+entitiesEl.addEventListener('click', async (e)=>{
+  const t = e.target;
+  if(t.classList?.contains('delEntity')){
+    const id = t.getAttribute('data-id');
+    try {
+      await fetchJSON(`/documents/${currentDoc.id}/entities/${id}`, {method:'DELETE'});
+      currentDoc = await fetchJSON(`/documents/${currentDoc.id}`);
+      renderDoc();
+      setStatus('Entity deleted');
+    } catch(err){ setStatus('Delete failed'); }
+  }
+});
+
+relationsEl.addEventListener('click', async (e)=>{
+  const t = e.target;
+  if(t.classList?.contains('delRelation')){
+    const id = t.getAttribute('data-id');
+    try {
+      await fetchJSON(`/documents/${currentDoc.id}/relations/${id}`, {method:'DELETE'});
+      currentDoc = await fetchJSON(`/documents/${currentDoc.id}`);
+      renderDoc();
+      setStatus('Relation deleted');
+    } catch(err){ setStatus('Delete failed'); }
   }
 });
 

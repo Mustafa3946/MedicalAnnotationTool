@@ -83,6 +83,9 @@ Endpoints (subject to change as frontend is added):
 - POST /bootstrap (ingest raw abstracts into documents)
 - GET /suggest/entities (heuristic entity suggestions)
 - POST /save/all (force save all documents)
+- DELETE /documents/{id}/entities/{entity_id}
+- DELETE /documents/{id}/relations/{relation_id}
+- PATCH /documents/{id}/status (body: {"status":"completed" | "in_progress" | ...})
 
 Example workflow (single document):
 1. POST /bootstrap
@@ -117,6 +120,7 @@ Open http://localhost:8000/ui/ after the container is running. Then:
 5. Click "Suggest Entities" to fetch heuristic suggestions; press "Add" on any suggestion to accept it.
 6. Click "Export JSON" to view the current document's raw annotation JSON in the Export panel.
 7. Press "Save All" anytime to force persistence of all loaded documents (auto-save also happens on each add action).
+8. Remove an entity or relation using the small ✕ button (after deletion re-select entities if creating a relation).
 
 Status messages appear at the top; all saved JSON files land in `data/annotations/`.
 
