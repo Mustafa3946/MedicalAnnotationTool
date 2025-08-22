@@ -118,11 +118,13 @@ def get_document(doc_id: str):
 @app.post("/documents/{doc_id}/entities", response_model=Entity)
 def add_entity(doc_id: str, entity: Entity):
     DOCUMENTS[doc_id].entities.append(entity)
+    save_document(DOCUMENTS[doc_id])
     return entity
 
 @app.post("/documents/{doc_id}/relations", response_model=Relation)
 def add_relation(doc_id: str, relation: Relation):
     DOCUMENTS[doc_id].relations.append(relation)
+    save_document(DOCUMENTS[doc_id])
     return relation
 
 @app.get("/documents/{doc_id}/export")
@@ -135,6 +137,7 @@ def import_annotations(file: UploadFile = File(...)):
     data = json.loads(file.file.read())
     doc = Document(**data)
     DOCUMENTS[doc.id] = doc
+    save_document(doc)
     return {"status": "imported", "document_id": doc.id}
 
 @app.get("/health")
@@ -155,6 +158,12 @@ def suggest_entities_endpoint(doc_id: str):
     # Log suggestions (simple stdout log)
     print(f"[suggest] doc={doc_id} count={len(suggestions)}")
     return {"document_id": doc_id, "suggestions": suggestions}
+
+@app.post("/save/all")
+def save_all():
+    for doc in DOCUMENTS.values():
+        save_document(doc)
+    return {"status": "saved", "count": len(DOCUMENTS)}
 # --- Bootstrap abstracts ---
 def _extract_core_text(raw: str) -> str:
     # Try to extract quoted main text if present

@@ -60,7 +60,11 @@ Prerequisites: Docker Desktop.
 	```powershell
 	curl http://localhost:8000/documents
 	```
-9. (Optional) Stop containers:
+9. (Optional) Get heuristic suggestions for a document:
+	```powershell
+	curl "http://localhost:8000/suggest/entities?doc_id=abstract1"
+	```
+10. (Optional) Stop containers:
 	```powershell
 	docker compose down
 	```
@@ -77,6 +81,8 @@ Endpoints (subject to change as frontend is added):
 - GET /health
 - GET /vocab (controlled entity/relation types)
 - POST /bootstrap (ingest raw abstracts into documents)
+- GET /suggest/entities (heuristic entity suggestions)
+- POST /save/all (force save all documents)
 
 Example workflow (single document):
 1. POST /bootstrap
@@ -97,6 +103,8 @@ Example workflow (single document):
 	```powershell
 	curl http://localhost:8000/documents/abstract1/export
 	```
+
+Persistence: documents auto-save to data/annotations/*.json after create, entity add, relation add, or import. Bootstrap reloads saved JSON if present.
 
 ## Roadmap (Time-Constrained)
 Phase 1 (done): Backend scaffold + Docker.
