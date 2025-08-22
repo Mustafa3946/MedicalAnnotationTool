@@ -60,6 +60,22 @@ class Document(BaseModel):
 # In-memory store (replace with persistent storage later)
 DOCUMENTS: dict[str, Document] = {}
 
+# --- Persistence (Step 1: directory + save on create) ---
+ANNOTATIONS_DIR = Path("data") / "annotations"
+try:
+    ANNOTATIONS_DIR.mkdir(parents=True, exist_ok=True)
+except Exception as e:  # pragma: no cover
+    print(f"[warn] unable to create annotations dir: {e}")
+
+def save_document(doc: Document):
+    """Persist a single document to JSON (minimal; overwrites)."""
+    try:
+        path = ANNOTATIONS_DIR / f"{doc.id}.json"
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(doc.json())
+    except Exception as e:  # pragma: no cover
+        print(f"[warn] save failed for {doc.id}: {e}")
+
 # Load vocab (lazy or at startup)
 _VOCAB_CACHE: dict | None = None
 
@@ -88,6 +104,7 @@ def load_vocab() -> dict:
 @app.post("/documents", response_model=Document)
 def create_document(doc: Document):
     DOCUMENTS[doc.id] = doc
+    save_document(doc)  # initial persistence
     return doc
 
 @app.get("/documents", response_model=List[Document])

@@ -5,4 +5,3 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .DS_Store
-# Keep tests tracked (remove previous tests/ ignore)
