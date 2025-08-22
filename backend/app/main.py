@@ -180,9 +180,23 @@ def bootstrap():
         if folder.is_dir():
             for path in folder.glob("*.txt"):
                 doc_id = path.stem
+                # If already in memory, reuse
                 if doc_id in DOCUMENTS:
                     loaded_docs.append(DOCUMENTS[doc_id])
                     continue
+                # If persisted JSON exists, load it instead of raw
+                persisted = ANNOTATIONS_DIR / f"{doc_id}.json"
+                if persisted.is_file():
+                    try:
+                        with open(persisted, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                        doc = Document(**data)
+                        DOCUMENTS[doc.id] = doc
+                        loaded_docs.append(doc)
+                        continue
+                    except Exception as e:  # pragma: no cover
+                        print(f"[warn] failed to load persisted {persisted}: {e}")
+                # Fall back to raw text ingestion
                 raw = path.read_text(encoding="utf-8")
                 core = _extract_core_text(raw)
                 doc = Document(id=doc_id, text=core)
