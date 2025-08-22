@@ -148,8 +148,5 @@ A lightweight annotation tool enabling medical subject matter experts to label e
 - Single file `main.py` for speed; acceptable given size, but modularization (routers/services) recommended post-MVP.
 - Limited validation to maintain velocity; flagged in improvement list.
 
-## 15. License & Attribution (Placeholder)
-Add chosen license (e.g., MIT) if distributing publicly. Acknowledge optional AI assistance in a separate `AI_USAGE.md` if required.
-
 ---
 Minimal, auditable, and intentionally simple — ready for incremental enhancement.
