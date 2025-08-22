@@ -32,6 +32,7 @@
   <button id="btnAddRelation" disabled>Create Relation (choose 2 entities)</button>
   <button id="btnExport" disabled>Export JSON</button>
   <button id="btnSuggest" disabled>Suggest Entities</button>
+  <button id="btnSaveAll">Save All</button>
 </section>
 <section>
   <h4>Document Text</h4>
@@ -66,6 +67,7 @@ const btnAddRelation = document.getElementById('btnAddRelation');
 const btnBootstrap = document.getElementById('btnBootstrap');
 const btnExport = document.getElementById('btnExport');
 const btnSuggest = document.getElementById('btnSuggest');
+const btnSaveAll = document.getElementById('btnSaveAll');
 const suggestionsEl = document.getElementById('suggestions');
 const exportOut = document.getElementById('exportOut');
 let currentDoc = null;
@@ -144,6 +146,16 @@ btnSuggest.addEventListener('click', async ()=>{
     suggestionsEl.textContent = 'Error fetching suggestions';
   }
   setStatus('Suggestions updated');
+});
+
+btnSaveAll.addEventListener('click', async ()=>{
+  try {
+    setStatus('Saving all...');
+    const res = await fetchJSON('/save/all', {method:'POST'});
+    setStatus(`Saved ${res.count} docs`);
+  } catch(e){
+    setStatus('Save failed');
+  }
 });
 
 suggestionsEl?.addEventListener('click', async (e)=>{

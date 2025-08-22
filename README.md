@@ -106,6 +106,20 @@ Example workflow (single document):
 
 Persistence: documents auto-save to data/annotations/*.json after create, entity add, relation add, or import. Bootstrap reloads saved JSON if present.
 
+## Minimal Web UI Usage
+
+Open http://localhost:8000/ui/ after the container is running. Then:
+
+1. Click "Bootstrap Documents" to load sample abstracts (first run).
+2. Choose a document from the drop-down.
+3. Highlight text in the Document Text panel; click "Add Entity". It appears in the Entities list and is highlighted in the text.
+4. To create a relation: check exactly two entity checkboxes, pick a relation type, click "Create Relation".
+5. Click "Suggest Entities" to fetch heuristic suggestions; press "Add" on any suggestion to accept it.
+6. Click "Export JSON" to view the current document's raw annotation JSON in the Export panel.
+7. Press "Save All" anytime to force persistence of all loaded documents (auto-save also happens on each add action).
+
+Status messages appear at the top; all saved JSON files land in `data/annotations/`.
+
 ## Roadmap (Time-Constrained)
 Phase 1 (done): Backend scaffold + Docker.
 Phase 2: Minimal frontend (document view, entity selection, relation linking).
