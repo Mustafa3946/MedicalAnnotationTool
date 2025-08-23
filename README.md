@@ -23,8 +23,8 @@ MedicalAnnotationTool/
 │
 ├── backend/                      # FastAPI backend
 │   └── app/
-│       ├── main.py               # API + models + persistence
-│       └── suggestion_service.py # Heuristic entity suggestions
+│       ├── main.py               # API + models + persistence + exports
+│       └── suggestion_service.py # Heuristic + optional OpenAI suggestions
 │   └── requirements.txt
 │
 ├── frontend/                     # Static UI
@@ -92,8 +92,12 @@ Endpoints:
 - GET /health
 - GET /vocab (controlled entity/relation types)
 - POST /bootstrap (ingest raw abstracts into documents)
-- GET /suggest/entities (heuristic entity suggestions)
-	- Optional query param `mode=llm` to use OpenAI model if `OPENAI_API_KEY` is set.
+- GET /suggest/entities (heuristic suggestions by default)
+	- Optional query param `mode=llm` to use OpenAI model if `OPENAI_API_KEY` is set
+- GET /export/entities.csv (flat entity CSV)
+- GET /export/relations.csv (flat relation CSV)
+- GET /export/all (aggregate JSON of all documents)
+  
 - POST /save/all (force save all documents)
 - DELETE /documents/{id}/entities/{entity_id}
 - DELETE /documents/{id}/relations/{relation_id}
@@ -119,7 +123,7 @@ Example workflow (single document):
 	curl http://localhost:8000/documents/abstract1/export
 	```
 
-Persistence: documents auto-save to data/annotations/*.json after create, entity add, relation add, or import. Bootstrap reloads saved JSON if present.
+Persistence: documents auto-save to data/annotations/*.json after create, entity add, relation add, or import. To reload prior saved annotations instead of starting clean, call `/bootstrap?load_existing=true`.
 
 ## LLM-Assisted Suggestions (Optional)
 
@@ -138,11 +142,12 @@ Enable:
 	  ```
 3. Request suggestions with LLM mode:
 	- `GET /suggest/entities?doc_id=abstract1&mode=llm`
+   (Frontend button currently calls heuristic; invoke the above manually or via browser console.)
 
 Behavior:
-- If the LLM call fails (timeout, API error, empty / malformed JSON) the system logs a fallback and returns heuristic suggestions.
-- Returned suggestions include `source` (`openai` or `heuristic-*`) and `model` when from OpenAI.
-- You can force default heuristic by omitting `mode` or using `mode=heuristic`.
+- If the LLM call fails (timeout / API error / malformed JSON) it falls back silently to heuristic and logs a one‑line fallback message.
+- Suggestions include `source` (`openai` or `heuristic-*`) and `model` when from OpenAI.
+- Force heuristic by omitting `mode` or using `mode=heuristic`.
 
 Security / Cost Notes:
 - Only entity suggestion endpoint uses the key; no key is stored in persisted documents.
