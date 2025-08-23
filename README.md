@@ -131,7 +131,7 @@ Persistence: documents auto-save to data/annotations/*.json after create, entity
 You can augment the heuristic suggestions with an OpenAI model.
 
 <p align="center">
-	<img src="docs/images/llm.png" alt="LLM suggestion flow" width="520" />
+	<img src="docs/images/llm.png" alt="LLM suggestion flow" width="650" />
 </p>
 
 Enable:
