@@ -13,6 +13,7 @@ Health check: https://ifk8vjymp2.ap-southeast-2.awsapprunner.com/health
 
 Note:
 - Cold start right after a new deployment may take ~30–60s.
+- LLM suggestions currently enabled (OpenAI key configured). Invoke: `/suggest/entities?doc_id=<id>&mode=llm` (UI button remains heuristic-only).
 
 Evaluation format: A live, interactive environment is intentionally provided in place of static screenshots or a prerecorded video so reviewers can exercise the end‑to‑end workflow (bootstrap → annotate entities → create relations → suggestions → export) directly. A capture can be produced on request if offline evidence becomes necessary.
 
@@ -129,6 +130,10 @@ Persistence: documents auto-save to data/annotations/*.json after create, entity
 
 You can augment the heuristic suggestions with an OpenAI model.
 
+<p align="center">
+	<img src="docs/images/llm.png" alt="LLM suggestion flow" width="520" />
+</p>
+
 Enable:
 1. Obtain an OpenAI API key and set environment variable before starting the container:
 	- PowerShell (temporary):
@@ -162,6 +167,7 @@ Open http://localhost:8000/ui/ after the container is running. Then:
 3. Highlight text in the Document Text panel; click "Add Entity". It appears in the Entities list and is highlighted in the text.
 4. To create a relation: check exactly two entity checkboxes, pick a relation type, click "Create Relation".
 5. Click "Suggest Entities" to fetch heuristic suggestions; press "Add" on any suggestion to accept it.
+	- LLM mode (if `OPENAI_API_KEY` is set) is currently triggered via API: open `/suggest/entities?doc_id=<id>&mode=llm` in the browser or use curl. UI button remains heuristic-only to keep it deterministic by default.
 6. Click "Export JSON" to view the current document's raw annotation JSON in the Export panel.
 7. Press "Save All" anytime to force persistence of all loaded documents (auto-save also happens on each add action).
 8. Remove an entity or relation using the small ✕ button (after deletion re-select entities if creating a relation).
@@ -203,6 +209,8 @@ The live demo runs on AWS App Runner (container direct from ECR). steps:
 4. Set port 8000 and environment variables:
 	- APP_ENV=prod
 	- APP_ANNOTATOR=demo (optional)
+	- OPENAI_API_KEY=sk-*** (optional; add only if enabling LLM suggestions; store as secret, not in source)
+	- OPENAI_SUGGEST_MODEL=gpt-4o-mini (optional override; defaults internally if unset)
 5. Enable automatic deployments from ECR.
 6. (Optional) Health check path /health.
 
