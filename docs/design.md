@@ -80,7 +80,10 @@ A lightweight annotation tool enabling medical subject matter experts to label e
 | POST | /import | Import a previously exported document |
 | POST | /save/all | Force persistence of all loaded docs |
 | GET | /vocab | Retrieve vocab (entity & relation types) |
-| GET | /suggest/entities?doc_id= | Heuristic entity suggestions |
+| GET | /suggest/entities?doc_id= | Entity suggestions (heuristic or LLM with `mode=llm`) |
+| GET | /export/all | Aggregate JSON (all documents) |
+| GET | /export/entities.csv | All entities as CSV |
+| GET | /export/relations.csv | All relations as CSV |
 | GET | /health | Liveness probe |
 
 ## 5. Frontend (Minimal Static UI)
@@ -89,7 +92,7 @@ A lightweight annotation tool enabling medical subject matter experts to label e
 - No framework: pure DOM & fetch for minimal footprint and clarity.
 
 ## 6. Suggestion Service Abstraction
-`backend/app/suggestion_service.py`: heuristic pattern extraction (capitalization + keyword list). Accepts existing spans to avoid duplicates. Future swap-in point for real LLM (OpenAI/HuggingFace). Logging via stdout; can evolve into structured logging + provenance (model name, prompt hash).
+`backend/app/suggestion_service.py`: heuristic pattern extraction (capitalization + keyword list). Minimal OpenAI integration enabled via query param `mode=llm` when `OPENAI_API_KEY` is set; merges LLM output with heuristic and falls back silently to heuristic on any error/empty model output.
 
 ## 7. Persistence Strategy & Rationale
 - JSON per document keeps version-control friendly artifacts, simplifies manual inspection & diff.
@@ -101,6 +104,9 @@ A lightweight annotation tool enabling medical subject matter experts to label e
 |----------|---------|---------|
 | APP_ANNOTATOR | Default annotator identifier | anon |
 | APP_ENV | Environment flag (dev) | dev |
+| OPENAI_API_KEY | Enables LLM suggestions when present | (unset) |
+| OPENAI_SUGGEST_MODEL | Override OpenAI model (default gpt-4o-mini) | gpt-4o-mini |
+| SUGGEST_MODE | Global default suggestion mode (heuristic/llm) | heuristic |
 
 ## 9. Non-Goals (Current Iteration)
 - Authentication & multi-user concurrency.
@@ -135,12 +141,13 @@ A lightweight annotation tool enabling medical subject matter experts to label e
 | Azure | Containerize & deploy (App Service or Container Apps) + Terraform IaC reintroduction |
 
 ## 13. Future Improvements (Short List)
-1. Aggregate export endpoint (/export/all) & simple dataset packaging.
-2. 404 error normalization + Pydantic response models for errors.
-3. Optional overlapping-span prevention toggle.
-4. Basic user identity (annotator) selection in UI.
-5. Real LLM suggestion integration with prompt & response audit trail.
-6. Screenshot / video generation automation (scripted browser capture).
+1. UI toggle for selecting heuristic vs LLM suggestions.
+2. 404 error normalization + structured error model.
+3. Overlapping-span prevention toggle.
+4. Provenance logging (model, latency) for LLM suggestions.
+5. Multi-user auth and annotator attribution.
+6. Prompt refinement & scoring calibration.
+7. Automated capture (screenshots/video) script.
 
 ## 14. Trade-offs & Rationale
 - Chose JSON persistence over DB to minimize setup and emphasize transparency for assessment reviewers.

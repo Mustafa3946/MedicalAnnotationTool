@@ -4,3 +4,4 @@ pydantic
 python-multipart
 pytest
 httpx
+openai>=1.0.0
