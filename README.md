@@ -93,6 +93,7 @@ Endpoints:
 - GET /vocab (controlled entity/relation types)
 - POST /bootstrap (ingest raw abstracts into documents)
 - GET /suggest/entities (heuristic entity suggestions)
+	- Optional query param `mode=llm` to use OpenAI model if `OPENAI_API_KEY` is set.
 - POST /save/all (force save all documents)
 - DELETE /documents/{id}/entities/{entity_id}
 - DELETE /documents/{id}/relations/{relation_id}
@@ -119,6 +120,33 @@ Example workflow (single document):
 	```
 
 Persistence: documents auto-save to data/annotations/*.json after create, entity add, relation add, or import. Bootstrap reloads saved JSON if present.
+
+## LLM-Assisted Suggestions (Optional)
+
+You can augment the heuristic suggestions with an OpenAI model.
+
+Enable:
+1. Obtain an OpenAI API key and set environment variable before starting the container:
+	- PowerShell (temporary):
+	  ```powershell
+	  $env:OPENAI_API_KEY = "sk-..."
+	  ```
+	- Or add to docker compose / App Runner service env vars.
+2. (Optional) Choose a model (default `gpt-4o-mini`):
+	  ```powershell
+	  $env:OPENAI_SUGGEST_MODEL = "gpt-3.5-turbo"
+	  ```
+3. Request suggestions with LLM mode:
+	- `GET /suggest/entities?doc_id=abstract1&mode=llm`
+
+Behavior:
+- If the LLM call fails (timeout, API error, empty / malformed JSON) the system logs a fallback and returns heuristic suggestions.
+- Returned suggestions include `source` (`openai` or `heuristic-*`) and `model` when from OpenAI.
+- You can force default heuristic by omitting `mode` or using `mode=heuristic`.
+
+Security / Cost Notes:
+- Only entity suggestion endpoint uses the key; no key is stored in persisted documents.
+- Keep request texts modest; abstracts are short so token usage remains low.
 
 ## Web UI Usage
 

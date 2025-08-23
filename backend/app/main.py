@@ -2,15 +2,18 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse
+from fastapi import Response
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
 from datetime import datetime
 import json
-from .suggestion_service import suggest_entities
+from .suggestion_service import suggest_entities_with_mode, suggest_entities as legacy_suggest
 import os
 import glob
 from pathlib import Path
 import uuid
+import csv
+from io import StringIO
 
 app = FastAPI(title="Medical Annotation API", version="0.1.0")
 
@@ -170,6 +173,32 @@ def export_document(doc_id: str):
     doc = DOCUMENTS[doc_id]
     return json.loads(doc.json())
 
+@app.get("/export/all")
+def export_all_documents():
+    return [json.loads(doc.json()) for doc in DOCUMENTS.values()]
+
+@app.get("/export/entities.csv")
+def export_entities_csv():
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["document_id","entity_id","start","end","text","type","code","annotator","timestamp"])
+    for doc_id, doc in DOCUMENTS.items():
+        for e in doc.entities:
+            writer.writerow([doc_id, e.id, e.start, e.end, e.text, e.type, e.code or "", e.annotator or "", e.timestamp.isoformat()])
+    csv_text = output.getvalue()
+    return Response(content=csv_text, media_type="text/csv")
+
+@app.get("/export/relations.csv")
+def export_relations_csv():
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["document_id","relation_id","source_entity_id","target_entity_id","relation_type","direction","annotator","timestamp"])
+    for doc_id, doc in DOCUMENTS.items():
+        for r in doc.relations:
+            writer.writerow([doc_id, r.id, r.source_entity_id, r.target_entity_id, r.relation_type, r.direction, r.annotator or "", r.timestamp.isoformat()])
+    csv_text = output.getvalue()
+    return Response(content=csv_text, media_type="text/csv")
+
 @app.post("/import")
 def import_annotations(file: UploadFile = File(...)):
     data = json.loads(file.file.read())
@@ -187,14 +216,14 @@ def get_vocab():
     return load_vocab()
 
 @app.get("/suggest/entities")
-def suggest_entities_endpoint(doc_id: str):
+def suggest_entities_endpoint(doc_id: str, mode: str | None = None):
     if doc_id not in DOCUMENTS:
         return {"error": "document not found"}
     doc = DOCUMENTS[doc_id]
     existing = [(e.start, e.end) for e in doc.entities]
-    suggestions = suggest_entities(doc.text, existing)
+    suggestions = suggest_entities_with_mode(doc.text, existing, mode=mode)
     # Log suggestions (simple stdout log)
-    print(f"[suggest] doc={doc_id} count={len(suggestions)}")
+    print(f"[suggest] doc={doc_id} mode={mode or 'auto'} count={len(suggestions)}")
     return {"document_id": doc_id, "suggestions": suggestions}
 
 @app.post("/save/all")
@@ -216,8 +245,14 @@ def _extract_core_text(raw: str) -> str:
 
 @app.post("/bootstrap", response_model=List[Document])
 @app.get("/bootstrap", response_model=List[Document])
-def bootstrap():
-    """Load raw abstracts from data/raw/*.txt into memory (id = filename stem)."""
+def bootstrap(load_existing: bool = False):
+    """Load raw abstracts from data/raw/*.txt into memory (id = filename stem).
+
+    Parameters:
+        load_existing: if True and a persisted JSON exists for a document id, load it (with entities/relations).
+                       Default False = ignore previous annotations and start with a clean in-memory doc to avoid
+                       duplicate entities in test / fresh sessions.
+    """
     base_candidates = [
         Path("data") / "raw",
         Path(__file__).resolve().parent / ".." / ".." / "data" / "raw",
@@ -231,9 +266,9 @@ def bootstrap():
                 if doc_id in DOCUMENTS:
                     loaded_docs.append(DOCUMENTS[doc_id])
                     continue
-                # If persisted JSON exists, load it instead of raw
+                # If persisted JSON exists, optionally load it
                 persisted = ANNOTATIONS_DIR / f"{doc_id}.json"
-                if persisted.is_file():
+                if load_existing and persisted.is_file():
                     try:
                         with open(persisted, "r", encoding="utf-8") as f:
                             data = json.load(f)
